@@ -1,68 +1,53 @@
-import gymnasium as gym
-
-from stable_baselines3 import PPO
-from stable_baselines3.ppo.policies import MlpPolicy
-
-from stable_baselines3.common.evaluation import evaluate_policy
-
-from IPython import display
 import matplotlib.pyplot as plt
-
-import time
-
-env = gym.make("CartPole-v1", render_mode='rgb_array')
-
-model = PPO(MlpPolicy, env, verbose=0)
-#-------------------------------
-
-mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100, warn=False)
-
-print(f"mean_reward: {mean_reward:.2f} +/- {std_reward:.2f}")
-#-------------------------------
-
-model.learn(total_timesteps=10_000)
-mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
-
-print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")
-
-#-------------------------------
-
-obs, info = env.reset()
-epoch = 10000
-
-data = {
-    'images': [],
-    'states': [],
-    'actions': []
-}
-
-i = 0
-terminated = False
-while not terminated and i < epoch:
-    action, _ = model.predict(obs)
-
-    screen = env.render()
-    display.clear_output(wait=True)
-    display.display(plt.gcf())
-    data['images'].append(screen)
-    data['states'].append(obs)
-    data['actions'].append(action)
-
-    obs, _, terminated, _, _ = env.step(action)
-    i += 1
-
-print(i)
+import json
 
 
-i_step = 5
-for i, image in enumerate(data['images']):
-    if i % i_step == 0:
-        plt.imshow(image)
-        plt.show()
-        print(data['states'][i])
-        print(data['actions'][i])
-        time.sleep(0.5)
+def generate_data(env_name, env, model, vec_env=False):
 
+    data_size = 10000
 
-plt.close()
-env.close()
+    data = {
+        'states': [],
+        'actions': []
+    }
+
+    i = 0
+    base_dir = '../data/' + env_name + '/'
+    while i < data_size:
+
+        if vec_env:
+            obs = env.reset()
+        else:
+            obs, info = env.reset()
+
+        terminated = False
+
+        while not terminated:
+            action, _ = model.predict(obs)
+
+            screen = env.render()
+            filepath = base_dir + 'images/' + str(i) + '.png'
+            plt.imsave(filepath, screen)
+
+            data['states'].append(obs.tolist())
+            if env_name == 'Pendulum':
+                data['actions'].append(float(action))
+            else:
+                data['actions'].append(int(action))
+
+            if vec_env:
+                obs, _, terminated, _ = env.step(action)
+            else:
+                obs, _, terminated, _, _ = env.step(action)
+
+            i += 1
+            if i >= data_size:
+                break
+
+    filepath = base_dir + 'label.json'
+    with open(filepath, 'w') as fp:
+        json.dump(data, fp)
+
+    print(i)
+
+    plt.close()
