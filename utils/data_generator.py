@@ -26,7 +26,7 @@ def generate_data(env_name, env, model, vec_env=False):
             action, _ = model.predict(obs)
 
             screen = env.render()
-            filepath = base_dir + 'images/' + str(i) + '.png'
+            filepath = base_dir + 'images/' + str(i).zfill(5) + '.png'
             plt.imsave(filepath, screen)
 
             data['states'].append(obs.tolist())
