@@ -32,7 +32,48 @@ def CartPole():
     env.close()
 
 
+def MountainCar():
+    env = gym.make("MountainCar-v0", render_mode="rgb_array")
+
+    dqn_model = DQN(
+        "MlpPolicy",
+        env,
+        verbose=1,
+        train_freq=16,
+        gradient_steps=8,
+        gamma=0.99,
+        exploration_fraction=0.2,
+        exploration_final_eps=0.07,
+        target_update_interval=600,
+        learning_starts=1000,
+        buffer_size=10000,
+        batch_size=128,
+        learning_rate=4e-3,
+        policy_kwargs=dict(net_arch=[256, 256]),
+        seed=2,
+    )
+
+    mean_reward, std_reward = evaluate_policy(
+        dqn_model,
+        dqn_model.get_env(),
+        deterministic=True,
+        n_eval_episodes=20,
+    )
+
+    print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")
+
+    dqn_model.learn(int(1.2e5), log_interval=10)
+
+    mean_reward, std_reward = evaluate_policy(dqn_model, dqn_model.get_env(), deterministic=True, n_eval_episodes=20)
+
+    print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")
+
+    generate_data('MountainCar', env, dqn_model)
+
+    env.close()
+
+
 if __name__ == '__main__':
-    CartPole()
+    #CartPole()
     #MountainCar()
-    #Pendulum()
+    Pendulum()
