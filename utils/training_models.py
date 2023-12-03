@@ -73,6 +73,22 @@ def MountainCar():
     env.close()
 
 
+def Pendulum():
+    env = gym.make("Pendulum-v1", render_mode="rgb_array")
+
+    # The noise objects for DDPG
+    n_actions = env.action_space.shape[-1]
+    action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+
+    model = DDPG("MlpPolicy", env, action_noise=action_noise, verbose=1)
+    model.learn(total_timesteps=10000, log_interval=10)
+    vec_env = model.get_env()
+
+    generate_data('Pendulum', vec_env, model, vec_env=True)
+
+    env.close()
+
+
 if __name__ == '__main__':
     #CartPole()
     #MountainCar()
