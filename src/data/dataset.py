@@ -17,17 +17,17 @@ class Dataset:
         self.actions = self.label['actions']
         self.images = sorted(glob(data_dir + 'images/*.png'))
 
-    def __init__(self, data_dir1, data_dir2, data_dir3):
-        data_dirs = [data_dir1, data_dir2, data_dir3]
-        self.states = []
-        self.actions = []
-        self.images = []
+    # def __init__(self, data_dir1, data_dir2, data_dir3):
+    #     data_dirs = [data_dir1, data_dir2, data_dir3]
+    #     self.states = []
+    #     self.actions = []
+    #     self.images = []
 
-        for data_dir in data_dirs:
-            self.label = parse_json(data_dir + 'label.json')
-            self.states.append(self.label['states'])
-            self.actions.append(self.label['actions'])
-            self.images.append(sorted(glob(data_dir + 'images/*.png')))
+    #     for data_dir in data_dirs:
+    #         self.label = parse_json(data_dir + 'label.json')
+    #         self.states.append(self.label['states'])
+    #         self.actions.append(self.label['actions'])
+    #         self.images.append(sorted(glob(data_dir + 'images/*.png')))
 
     def __len__(self):
         assert len(self.states) == len(self.actions) == len(self.images)
@@ -70,7 +70,7 @@ class PendulumDataset(Dataset):
     def __getitem__(self, idx):
         item = super().__getitem__(idx)
 
-        x, y, angular_vel = item['state']
+        x, y, angular_vel = item['state'][0]
         item['state'] = {'x': x, 'y': y, 'angular_vel': angular_vel}
         item['action'] = float(item['action'])
         return item
