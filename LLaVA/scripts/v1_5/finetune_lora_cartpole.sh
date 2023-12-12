@@ -5,8 +5,8 @@ deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero3.json \
     --model_name_or_path lmsys/vicuna-13b-v1.5 \
     --version v1 \
-    --data_path ../NLP_Team10/src/fine_tuning/CartPole.json \
-    --image_folder ../NLP_Team10/data/CartPole/images \
+    --data_path ../src/fine_tuning/CartPole.json \
+    --image_folder ../data/CartPole/images \
     --vision_tower openai/clip-vit-large-patch14-336 \
     --pretrain_mm_mlp_adapter ./ckpts/llava-v1.5-13b/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
