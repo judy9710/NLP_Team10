@@ -1,4 +1,3 @@
-import argparse
 import torch
 
 from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
@@ -12,22 +11,29 @@ from PIL import Image
 from PIL import Image
 from transformers import TextStreamer
 import matplotlib.pyplot as plt
+import gymnasium as gym
+import numpy as np 
+import argparse
+import os
+from matplotlib import pyplot as plt
+from pdb import set_trace as bp
 
 
 class LLaVA(object):
-    def __init__(self, model_path, device=0, model_base="lmsys/vicuna-13b-v1.5"):
+    def __init__(self, model_path, device='0, 1, 2, 3', model_base="lmsys/vicuna-13b-v1.5"):
         self.model_path = model_path
         self.model_base = model_base
-        self.device = f"cuda:{device}"
+        # self.device = f"cuda:{device}"
         self.temperature = 0.2
         self.max_new_tokens = 512
-        self.load_8bit, load_4bit = False, False
+        self.load_8bit = False
+        self.load_4bit = False
         self.setup()
     
     def setup(self):
         disable_torch_init()
         self.model_name = get_model_name_from_path(self.model_path)
-        self.tokenizer, self.model, self.image_processor, context_len = load_pretrained_model(self.model_path, self.model_base, self.model_name, self.load_8bit, self.load_4bit, device=self.device)
+        self.tokenizer, self.model, self.image_processor, context_len = load_pretrained_model(model_path=self.model_path, model_base=self.model_base, model_name=self.model_name, load_8bit=self.load_8bit, load_4bit=self.load_4bit, device='cuda')
         if 'llama-2' in self.model_name.lower():
             self.conv_mode = "llava_llama_2"
         elif "v1" in self.model_name.lower():
@@ -39,7 +45,7 @@ class LLaVA(object):
         return 
     
     def to_pil_image(self, matplotlib_image):
-        numpy_image = matplotlib_image.to_array()
+        numpy_image = matplotlib_image
         pil_image = Image.fromarray(numpy_image)
         if pil_image.mode != 'RGB':
             pil_image = pil_image.convert('RGB')
@@ -89,3 +95,92 @@ class LLaVA(object):
 
         outputs = self.tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
         return outputs
+
+def state_to_dict(state, args):
+    if args.env == 'cartpole':
+        state_dict = {
+            'cart_pos': state[0],
+            'cart_vel': state[1],
+            'pole_angle': state[2],
+            'pole_angular_vel': state[3]
+        }
+    elif args.env == 'mountaincar':
+        state_dict = {
+            'car_pos': state[0],
+            'car_vel': state[1]
+        }
+    elif args.env == 'pendulum':
+        state_dict = {
+            'x': state[0],
+            'y': state[1],
+            'angular_vel': state[2]
+        }
+    return state_dict
+
+def delete_token_and_convert_to_int(string):
+    string = string.replace('</s>', '')
+    try:
+        integer_value = int(string)
+        return integer_value
+    except ValueError:
+        return None
+
+def delete_token_and_convert_to_float(string):
+    string = string.replace('</s>', '')
+    try:
+        float_value = float(string)
+        return np.array([float_value])
+    except ValueError:
+        print(f'error: {string}')
+        return None
+
+def main(args):
+    model_path = f'LLaVA/ckpts/llava-v1.5-13b-lora-{args.env}'
+    llava = LLaVA(model_path=model_path, device=args.device)
+
+    if args.env == 'cartpole':
+        env = gym.make("CartPole-v1", render_mode='rgb_array')
+    elif args.env == 'mountaincar':
+        env = gym.make("MountainCar-v0", render_mode='rgb_array')
+    elif args.env == 'pendulum':
+        env = gym.make("Pendulum-v1", render_mode='rgb_array')
+    state, info = env.reset()
+    state = state_to_dict(state, args)
+
+    os.makedirs(f'data/demo_images/{args.env}/', exist_ok=True)
+
+    if args.env in ['mountaincar', 'pendulum']:
+        episode_end = 200
+    elif args.env == 'cartpole':
+        episode_end = 500
+
+    for idx in range(episode_end):
+        screen = env.render()
+        file_name = f'data/demo_images/{args.env}/{str(idx).zfill(5)}.png'
+        plt.imsave(file_name, screen)
+
+        action_str = llava.get_response(screen, state)
+        if args.env in ['cartpole', 'mountaincar']:
+            action = delete_token_and_convert_to_int(action_str)
+        elif args.env == 'pendulum':
+            action = delete_token_and_convert_to_float(action_str)
+
+        state, reward, terminated, truncated, info = env.step(action)
+        state = state_to_dict(state, args)
+        if terminated:
+            env.reset()
+            print(f'terminated at {idx}')
+            break
+        # elif truncated:
+        #     env.reset()
+        #     print('truncated')
+        #     break
+    
+    env.close()
+
+if __name__ == '__main__':
+    argparse = argparse.ArgumentParser()
+    argparse.add_argument('--env', type=str, default='cartpole', choices=['cartpole', 'mountaincar', 'pendulum'])
+    argparse.add_argument('--device', type=int, default=0)
+    args = argparse.parse_args()
+    main(args)
