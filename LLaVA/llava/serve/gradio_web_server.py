@@ -466,5 +466,5 @@ if __name__ == "__main__":
     ).launch(
         server_name=args.host,
         server_port=args.port,
-        share=args.share
+        share=False
     )
