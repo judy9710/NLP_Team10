@@ -42,7 +42,7 @@ def generate_single_prompt(args, data):
         pendulum_question_template = f"The system consists of a pendulum attached at one end to a fixed point, and the other end being free. The pendulum starts in a random position and the goal is to apply torque on the free end to swing it into an upright position, with its center of gravity right above the fixed point. We can observe the x position of the pendulum, the y position of the pendulum, and the angular velocity of the pendulum. The range of the x position of the pendulum is from -1 to 1. The range of the y position of the pendulum is from -1 to 1. The range of the angular velocity of the pendulum is -8.0 to 8.0. In this image, the x position of the pendulum is {data['state']['x']}, the y position of the pendulum is {data['state']['y']}, and the angular velocity of the pendulum is {data['state']['angular_vel']}. Then, how much torque should I apply to the pendulum? Answer in a float number between -2.0 and 2.0 without any description."
         question['value'] = pendulum_question_template
         answer['value'] = str(data['action'])
-       
+        
     return [question, answer]
     
 
