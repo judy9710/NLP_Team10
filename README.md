@@ -47,3 +47,5 @@ bash ./scripts/v1_5/finetune_lora_cartpole.sh
 ```Bash
 python llava/serve/cli_project.py --env cartpole # or mountaincar, pendulum
 ```
+## Checkpoints
+Please contact us for pre-trained checkpoints.
